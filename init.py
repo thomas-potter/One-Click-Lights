@@ -7,7 +7,7 @@ from bpy.utils import register_class, unregister_class
 bl_info = {
     "name": "OneClickLights",
     "author": "Potter3D",
-    "version": (1, 0, 0),
+    "version": (0, 0, 1),
     "blender": (4, 0, 0),  # Minimum Blender version
     "location": "View3D > UI",
     "description": "One Click to Instantly Light your Scene",
@@ -117,6 +117,51 @@ class LightManagerPanel(Panel):
 
 
 # -------------------------------------------------------------------
+# Popup Operator
+# -------------------------------------------------------------------
+class LightSetupPopupOperator(Operator):
+    bl_idname = "light_manager.open_light_setup_popup"
+    bl_label = "Select Light Setup"
+
+    def execute(self, context):
+        print("LightSetupPopupOperator.execute() called")
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        print("LightSetupPopupOperator.invoke() called")
+        return context.window_manager.invoke_popup(self, width=300)
+
+    def draw(self, context):
+        print("LightSetupPopupOperator.draw() called")
+        layout = self.layout
+        light_setups = get_light_setups_data()
+        scene = context.scene
+
+        for setup in light_setups:
+            row = layout.row()
+            row.label(text=setup["name"])
+            op = row.operator("light_manager.select_light_setup", text="Select")
+            op.light_setup_name = setup["name"]
+
+
+# -------------------------------------------------------------------
+# Operator to Select Light Setup
+# -------------------------------------------------------------------
+class SelectLightSetupOperator(Operator):
+    bl_idname = "light_manager.select_light_setup"
+    bl_label = "Select Light Setup"
+
+    light_setup_name: StringProperty(
+        name="Light Setup Name", description="Name of the light setup to select"
+    )
+
+    def execute(self, context):
+        print("SelectLightSetupOperator.execute() called")
+        context.scene.one_click_lights_current_setup = self.light_setup_name
+        return {"FINISHED"}
+
+
+# -------------------------------------------------------------------
 # Operator to Apply Light Setup
 # -------------------------------------------------------------------
 class ApplyLightSetupOperator(Operator):
@@ -167,7 +212,12 @@ class ApplyLightSetupOperator(Operator):
 # -------------------------------------------------------------------
 # Registration
 # -------------------------------------------------------------------
-classes = [LightManagerPanel, ApplyLightSetupOperator]
+classes = [
+    LightManagerPanel,
+    ApplyLightSetupOperator,
+    LightSetupPopupOperator,  # <--- Make sure this is included
+    SelectLightSetupOperator,  # <--- Make sure this is included
+]
 
 
 def register():
